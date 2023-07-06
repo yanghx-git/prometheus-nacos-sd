@@ -45,15 +45,16 @@ type NacosSDConfig struct {
 // Note: This is the struct with your implementation of the Discoverer interface (see Run function).
 // Discovery retrieves target information from a Consul server and updates them via watches.
 type NacosDiscovery struct {
-	Address         string
-	Namespace       string
-	Group           string
-	Username        string
-	Password        string
-	RefreshInterval int
-	TagSeparator    string
-	Logger          log.Logger
-	OldSourceList   map[string]bool
+	Address                       string
+	Namespace                     string
+	Group                         string
+	Username                      string
+	Password                      string
+	RefreshInterval               int
+	TagSeparator                  string
+	Logger                        log.Logger
+	OldSourceList                 map[string]bool
+	ServiceNameIsMetricPathPrefix bool
 }
 
 func (d *NacosDiscovery) parseServiceInstance(Service nacosModel.Service, serviceName string, namespace string, group string) (*targetgroup.Group, error) {
@@ -87,7 +88,11 @@ func (d *NacosDiscovery) parseServiceInstance(Service nacosModel.Service, servic
 		//real prometheus metric path is "/xxx/actuator/prometheus"
 		realMetraicsPath, ok := instance.Metadata["context_path"]
 		if !ok || realMetraicsPath == "/" {
-			realMetraicsPath = "/actuator/prometheus"
+			prefix := ""
+			if d.ServiceNameIsMetricPathPrefix {
+				prefix = "/" + serviceName
+			}
+			realMetraicsPath = prefix + "/actuator/prometheus"
 		} else {
 			realMetraicsPath += "/actuator/prometheus"
 		}
@@ -192,13 +197,14 @@ func (d *NacosDiscovery) Run(ctx context.Context, ch chan<- []*targetgroup.Group
 
 func NewDiscovery(conf NacosDiscovery) (*NacosDiscovery, error) {
 	cd := &NacosDiscovery{
-		Address:         conf.Address,
-		Namespace:       conf.Namespace,
-		Group:           conf.Group,
-		RefreshInterval: conf.RefreshInterval,
-		TagSeparator:    conf.TagSeparator,
-		Logger:          conf.Logger,
-		OldSourceList:   make(map[string]bool),
+		Address:                       conf.Address,
+		Namespace:                     conf.Namespace,
+		Group:                         conf.Group,
+		RefreshInterval:               conf.RefreshInterval,
+		TagSeparator:                  conf.TagSeparator,
+		Logger:                        conf.Logger,
+		OldSourceList:                 make(map[string]bool),
+		ServiceNameIsMetricPathPrefix: conf.ServiceNameIsMetricPathPrefix,
 	}
 	return cd, nil
 }
