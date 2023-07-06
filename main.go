@@ -38,9 +38,6 @@ func main() {
 	logger = log.NewSyncLogger(log.NewLogfmtLogger(os.Stdout))
 	logger = log.With(logger, "ts", log.DefaultTimestampUTC, "caller", log.DefaultCaller)
 
-	*listenAddress = `192.168.110.100:8848`
-	*namespace = `27dc85ce-f51f-4aac-88c0-f607c8ab4e3a`
-	*serviceNameIsMetricPathPrefix = true
 	// NOTE: create an instance of your new SD implementation here.
 	cfg := nacos.NacosDiscovery{
 		Address:                       *listenAddress,
